@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - develop
+
   pull_request:
     branches:
       - main
@@ -13,6 +14,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: auth-service
 
     steps:
       - name: Checkout code
@@ -29,8 +34,9 @@ jobs:
         with:
           path: ~/.m2
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
 
       - name: Build project
         run: mvn clean package -DskipTests
+
+      - name: Run tests
+        run: mvn test
