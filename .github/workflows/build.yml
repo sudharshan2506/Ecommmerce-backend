@@ -1,1 +1,67 @@
-first workflow
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: auth-service
+
+    services:
+      postgres:
+        image: postgres:17
+
+        env:
+          POSTGRES_DB: ecommerce
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+
+        ports:
+          - 5432:5432
+
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+
+      - name: Wait for Postgres
+        run: sleep 10
+
+      - name: Run Flyway migrations
+        run: |
+          mvn flyway:migrate \
+            -Dflyway.url=jdbc:postgresql://localhost:5432/ecommerce \
+            -Dflyway.user=postgres \
+            -Dflyway.password=password
+
+      - name: Generate jOOQ sources
+        run: mvn generate-sources
+
+      - name: Build project
+        run: mvn clean package -DskipTests
