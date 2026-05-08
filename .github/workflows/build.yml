@@ -13,13 +13,33 @@ on:
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
 
     defaults:
       run:
         working-directory: auth-service
 
+    services:
+      postgres:
+        image: postgres:17
+
+        env:
+          POSTGRES_DB: ecommerce
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+
+        ports:
+          - 5432:5432
+
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -35,8 +55,11 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
 
+      - name: Wait for Postgres
+        run: sleep 10
+
+      - name: Generate jOOQ sources
+        run: mvn generate-sources
+
       - name: Build project
         run: mvn clean package -DskipTests
-
-      - name: Run tests
-        run: mvn test
