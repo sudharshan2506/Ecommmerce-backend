@@ -54,7 +54,11 @@ jobs:
         run: sleep 10
 
       - name: Run Flyway migrations
-        run: mvn flyway:migrate
+        run: |
+          mvn flyway:migrate \
+            -Dflyway.url=jdbc:postgresql://localhost:5432/ecommerce \
+            -Dflyway.user=postgres \
+            -Dflyway.password=password
 
       - name: Generate jOOQ sources
         run: mvn generate-sources
